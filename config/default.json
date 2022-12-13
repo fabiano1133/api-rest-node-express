@@ -1,0 +1,8 @@
+{
+    "mongo": {
+        "url": "mongodb://localhost:27017/api_restfull_nodejs_express"
+    },
+    "server": {
+        "port": 3333
+    }
+}

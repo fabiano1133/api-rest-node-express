@@ -1,60 +1,26 @@
 import express from "express";
-import router from "../routes/index.js";
+import cors from "cors";
+import LogRequest from "../server/middlewares/LogRequest.js";
+import NotFound from "../server/middlewares/NotFound.js";
+import Error from "../server/middlewares/Error.js";
+import NotFavicon from "../server/middlewares/NotFavicon.js";
+import routes from "../server/routes/index.js";
 
 const app = express();
-
-const logRequest = (req, res, next) => {
-  console.log(`${req.url} - ${req.method} - ${new Date()}`);
-  next();
-};
-
-const notFound = (req, res, next) => {
-  var err = new Error("Not Found");
-  err.status = 404;
-  next(err);
-};
-
-const error = (err, req, res, next) => {
-  if (err.status !== 404) {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-      error: err.message,
-      message: "Internal Server Error",
-    });
-  }
-};
-
-const notFavicon = (req, res, next) => {
-  if (req.url === "/favicon.ico") {
-    res.writeHead(200, { "Content-Type": "image/x-icon" });
-    res.end("");
-  }
-  next();
-};
-
-const cors = (req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-};
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Middlewares
-app.use(logRequest);
-app.use(error);
-app.use(notFavicon);
+app.use(LogRequest.logRequest);
 
 // Routes
-app.use(router);
+app.use(routes);
 
-// cors
-app.use(cors);
+// Middlewares of error
+app.use(Error.handleError);
+app.use(NotFavicon.notFavicon);
+app.use(NotFound.notFound);
 
-app.use(notFound);
-
-app.listen(3333, () => console.log("Server is running on port 3333"));
+export default app;
