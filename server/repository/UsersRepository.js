@@ -1,58 +1,40 @@
-import { ObjectID } from "mongoist";
-import database from "../config/mongoist.js";
+import mongoose from "../config/mongoose.js";
+import schema from "../schema/Users.js";
 
-const Users = {
+const userModel = mongoose.model("users", schema);
+
+const UsersRepository = {
     list(q, page = 1) {
         const query = {};
-        if (q) query.name = new RegExp(q, "i");
-        const DEFAULT_LIMIT = 5;
-        const skip = Math.abs(page - 1) * DEFAULT_LIMIT;
-        const responseDatabase = database.users.find(
-            query,
-            {},
-            { skip, limit: DEFAULT_LIMIT }
-        );
-
-        return responseDatabase;
+        const LIMIT = 5;
+        const skip = (page - 1) * LIMIT;
+        return userModel.find(query, {}, { skip, limit: LIMIT });
     },
 
-    create(name, email, password) {
-        const user = database.users.insert({
-            name,
-            email,
-            password,
-        });
-        return user;
+    create(data) {
+        const user = new userModel(data);
+        return user.save();
     },
 
     listById(id) {
-        return database.users.findOne(ObjectID(id));
+        return userModel.findById(id);
     },
 
     listByEmail(email) {
-        return database.users.findOne({ email });
+        return userModel.findOne({ email });
     },
-    updateById(id, name, email, password) {
-        return database.users.update(
-            { _id: ObjectID(id) },
-            {
-                $set: {
-                    name,
-                    email,
-                    password,
-                },
-            }
-        );
+    updateById(id, data) {
+        return userModel.updateOne({ _id: id }, data);
     },
     async findById(id) {
-        const user = await database.users.findOne({ _id: ObjectID(id) });
+        const user = userModel.findById(id);
 
         return user;
     },
 
     deleteById(id) {
-        return database.users.remove({ _id: ObjectID(id) });
+        return userModel.deleteOne({ _id: id });
     },
 };
 
-export default Users;
+export default UsersRepository;

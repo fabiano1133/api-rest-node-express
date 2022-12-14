@@ -52,7 +52,11 @@ const Users = {
             if (emailExists) {
                 return next(handleEmailExists(email));
             }
-            await UsersRepository.create(name, email, password);
+            await UsersRepository.create({
+                name,
+                email,
+                password,
+            });
 
             return res.status(201).json({ message: "User created!" });
         } catch (error) {
@@ -65,13 +69,17 @@ const Users = {
         const { name, email, password } = req.body;
 
         try {
-            const user = await UsersRepository.findById(id);
+            const user = await UsersRepository.findById({ _id: id });
 
             if (!user) {
                 return res.status(404).json({ message: "User not found!" });
             }
 
-            await UsersRepository.updateById(id, name, email, password);
+            await UsersRepository.updateById(id, {
+                name,
+                email,
+                password,
+            });
             return res.json({ message: "User updated!" });
         } catch (error) {
             next(error);
@@ -89,8 +97,10 @@ const Users = {
             }
 
             await UsersRepository.deleteById(id);
-            return res.status(204).send(next);
-        } catch (error) {}
+            return res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
     },
 };
 export default Users;
