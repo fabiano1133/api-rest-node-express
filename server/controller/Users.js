@@ -1,5 +1,9 @@
 import UsersRepository from "../repository/UsersRepository.js";
 import createError from "http-errors";
+import jwt from "jwt-simple";
+import moment from "moment/moment.js";
+import config from "config";
+import { compare, hash } from "bcrypt";
 
 const handleNotFound = (result) => {
     if (!result) {
@@ -21,7 +25,13 @@ const Users = {
         UsersRepository.list(q, page)
             .then((users) =>
                 res.json({
-                    users: users,
+                    users: users.map((user) => {
+                        return {
+                            id: user._id,
+                            name: user.name,
+                            email: user.email,
+                        };
+                    }),
                     page: page,
                     count: users.length,
                     nextPage: Boolean(users.length > 0),
@@ -52,10 +62,13 @@ const Users = {
             if (emailExists) {
                 return next(handleEmailExists(email));
             }
+
+            const hashedPassword = await hash(password, 10);
+
             await UsersRepository.create({
                 name,
                 email,
-                password,
+                password: hashedPassword,
             });
 
             return res.status(201).json({ message: "User created!" });
@@ -98,6 +111,44 @@ const Users = {
 
             await UsersRepository.deleteById(id);
             return res.status(204).send();
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async login(req, res, next) {
+        const { email, password } = req.body;
+
+        try {
+            const user = await UsersRepository.listByEmail(email);
+
+            if (!user) {
+                return res
+                    .status(404)
+                    .json({ message: "Email or password incorrect" });
+            }
+
+            const isPasswordValid = await compare(password, user.password);
+
+            if (!isPasswordValid) {
+                return res
+                    .status(401)
+                    .json({ message: "Email or password incorrect" });
+            }
+
+            const token = jwt.encode(
+                {
+                    _id: user._id,
+                    email: email,
+                    exp: moment().add(7, "days").valueOf(),
+                },
+                config.get("jwtTokenSecret")
+            );
+
+            return res.json({
+                email: user.email,
+                token: token,
+            });
         } catch (error) {
             next(error);
         }

@@ -4,5 +4,6 @@
     },
     "server": {
         "port": 3333
-    }
+    },
+    "jwtTokenSecret": "minha-senha-super-secreta-para-gerar-o-token"
 }
